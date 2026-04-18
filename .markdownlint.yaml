@@ -1,0 +1,29 @@
+# markdownlint-cli2 設定
+# 日本語の法務文書用に一部ルールを緩和
+
+default: true
+
+# 行長: 日本語の条文は長くなりがちなので無効化
+MD013: false
+
+# 同じ見出しの重複: 「改定履歴」が複数ファイルに出現しうるので許容
+MD024:
+  siblings_only: true
+
+# 先頭H1: 各ファイル先頭にH1を要求
+MD041: true
+
+# 強調の書式の一貫性
+MD049:
+  style: asterisk
+MD050:
+  style: asterisk
+
+# 順序付きリストの番号: 手書き連番を許容（第1条...のような箇条書き）
+MD029: false
+
+# インライン HTML: <br> 等を許容
+MD033: false
+
+# 句点: 末尾句点の統一は厳密にチェックしない
+MD026: false

@@ -1,0 +1,77 @@
+name: Release on Merge
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - 'terms.md'
+      - 'privacy.md'
+      - 'auth-component.md'
+      - 'README.md'
+
+permissions:
+  contents: write
+
+jobs:
+  tag-and-release:
+    name: Tag enforced version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Decide tag name
+        id: tag
+        run: |
+          set -euo pipefail
+          DATE=$(date -u '+%Y%m%d')
+          BASE="enforced-${DATE}"
+          # 同日に複数マージがあった場合のサフィックス付与
+          N=1
+          TAG="$BASE"
+          while git rev-parse "$TAG" >/dev/null 2>&1; do
+            N=$((N + 1))
+            TAG="${BASE}-${N}"
+          done
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Create tag
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "${{ steps.tag.outputs.tag }}" -m "Enforced version: ${{ steps.tag.outputs.tag }}"
+          git push origin "${{ steps.tag.outputs.tag }}"
+
+      - name: Generate release notes
+        id: notes
+        run: |
+          set -euo pipefail
+          PREV=$(git tag --list 'enforced-*' --sort=-creatordate | sed -n '2p' || true)
+          {
+            echo "# ${{ steps.tag.outputs.tag }} 施行内容"
+            echo
+            if [[ -n "$PREV" ]]; then
+              echo "前バージョン: \`$PREV\`"
+              echo
+              echo "## 変更ファイル"
+              echo
+              git diff --stat "$PREV"..HEAD -- terms.md privacy.md auth-component.md README.md | sed 's/^/  /'
+              echo
+              echo "## コミット"
+              echo
+              git log --pretty=format:'- %h %s (%an)' "$PREV"..HEAD -- terms.md privacy.md auth-component.md README.md
+            else
+              echo "初回施行"
+            fi
+          } > /tmp/release-notes.md
+          cat /tmp/release-notes.md
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.tag.outputs.tag }}
+          name: ${{ steps.tag.outputs.tag }}
+          body_path: /tmp/release-notes.md
+          draft: false
+          prerelease: false

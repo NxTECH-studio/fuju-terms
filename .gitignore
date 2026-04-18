@@ -1,0 +1,9 @@
+# Claude Code 個人設定
+.claude/
+
+# エディタ・OS依存
+.DS_Store
+*.swp
+*.swo
+.idea/
+.vscode/
