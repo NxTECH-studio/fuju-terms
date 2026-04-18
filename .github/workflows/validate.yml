@@ -39,7 +39,6 @@ jobs:
         with:
           args: >-
             --no-progress
-            --exclude-mail
             --cache
             --max-cache-age 1d
             --timeout 20
